@@ -70,7 +70,7 @@ data Regex
 ``` 
 
 \
-Regexify works using the transitive closure method [^1] to convert DFAs to regular expressions.
+Regexify works using the transitive closure method[^1] to convert DFAs to regular expressions.
 To simplify the regular expressions, pattern matching on given rules is used to simplify the expression as far as possible.
 
 **This will not always result in the shortest possible expression but it will definitely be an equivalent one.**
