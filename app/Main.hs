@@ -149,10 +149,6 @@ regexify (DFA ts fs c) =
 
 main :: IO ()
 main = do
-    -- let autom = DFA [(0, 1, "a"), (1, 1, "b"), (1, 3, "c"), (0, 2, "c"), (2, 3, "b")] [3] 0
-    -- let autom = DFA [(1, 1, 'b'), (1, 2, 'a'), (2, 1, 'a'), (2, 3, 'b'), (3, 3, 'c')] [2, 3] 0
-    -- mapM_ ((putStrLn . (++) "\n" . concatMap (++ "\t")) . map (stringify . takeFirstEqual . iterate simplify)) . transitiveClosure autom 0 1 . dfaToMatrix $ autom
-    -- let x = (transitiveClosure autom 0 3 . dfaToMatrix $ autom) !! 3 !! 3
     -- let autom =
     --         DFA
     --             [ (0, 1, 'a')
