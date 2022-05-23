@@ -18,7 +18,7 @@ F = {3}
 \
 ![automaton A](dfa.png)
 
-With the DFA type being defined as
+With the type DFA being defined as
 
 ```haskell
 data DFA = DFA
@@ -32,7 +32,7 @@ data DFA = DFA
 automaton A can be represented as
 ```haskell
 autom :: DFA
-let autom = 
+autom = 
     DFA 
         [ (0, 1, 'a')
         , (1, 1, 'b')
@@ -44,11 +44,24 @@ let autom =
         0
 ```
 
-calling `regexify` on `autom` will result in the already simplified corresponding regular expression:
+which can then be converted to a regular expression
 
-> `(ab*c|cb)`
+```haskell
+regexify autom
+> RegexOr (RegexConcat (RegexConcat (RegexString "a") (RegexAny (RegexString "b"))) (RegexString "c")) (RegexConcat (RegexString "c") (RegexString "b"))
+
+
+stringify . regexify $ autom
+> "(ab*c|cb)"
+```
 
 \
-This is achieved by applying the [transitive closure method](https://cs.stackexchange.com/a/2395) to convert DFAs to regular expressions and then simplifying the expression with defined rules. This will not always result in the shortest possible expression but it will definitely be equivalent.
+Regexify works using the [transitive closure method](https://cs.stackexchange.com/a/2395) to convert DFAs to regular expressions.
+To simplify the regular expressions, pattern matching on given rules is used to simplify the expression as far as possible.
 
-Currently **only** DFAs are supported, which also means that δ has to be total, so there cannot be multiple transitions between two states.
+**This will not always result in the shortest possible expression but it will definitely be an equivalent one.**
+
+</br>
+</br>
+
+> Currently only DFAs are supported, which also means that δ has to be total, so there cannot be multiple transitions between two states.

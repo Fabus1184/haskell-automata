@@ -20,10 +20,10 @@ data DFA = DFA
 
 data Regex
     = RegexNull
-    | RegexEpsilon
+    | RegexEmpty
     | RegexString String
-    | RegexStar Regex
-    | RegexPlus Regex
+    | RegexAny Regex
+    | RegexSome Regex
     | RegexOptional Regex
     | RegexOr Regex Regex
     | RegexConcat Regex Regex
@@ -34,27 +34,27 @@ stringify s = k
   where
     k = stringify' s
     stringify' RegexNull = "∅"
-    stringify' RegexEpsilon = "ε"
+    stringify' RegexEmpty = "ε"
     stringify' (RegexString a) = a
-    stringify' (RegexPlus a) = "(" ++ stringify' a ++ ")" ++ "+"
-    stringify' (RegexStar (RegexString c)) = stringify' (RegexString c) ++ "*"
-    stringify' (RegexStar r) = "(" ++ stringify' r ++ ")" ++ "*"
+    stringify' (RegexSome a) = "(" ++ stringify' a ++ ")" ++ "+"
+    stringify' (RegexAny (RegexString c)) = stringify' (RegexString c) ++ "*"
+    stringify' (RegexAny r) = "(" ++ stringify' r ++ ")" ++ "*"
     stringify' (RegexOptional r) = "(" ++ stringify' r ++ ")" ++ "?"
     stringify' (RegexOr a b) = "(" ++ stringify' a ++ "|" ++ stringify' b ++ ")"
     stringify' (RegexConcat a b) = stringify' a ++ stringify' b
 
 simplify :: Regex -> Regex
-simplify (RegexPlus (RegexOptional r)) = RegexStar (simplify r)
-simplify (RegexStar RegexEpsilon) = RegexEpsilon
-simplify (RegexStar (RegexOptional a)) = RegexStar (simplify a)
-simplify (RegexStar RegexNull) = RegexEpsilon
-simplify (RegexStar (RegexStar a)) = RegexStar (simplify a)
-simplify (RegexStar r) = RegexStar (simplify r)
-simplify (RegexOptional RegexNull) = RegexEpsilon
+simplify (RegexSome (RegexOptional r)) = RegexAny (simplify r)
+simplify (RegexAny RegexEmpty) = RegexEmpty
+simplify (RegexAny (RegexOptional a)) = RegexAny (simplify a)
+simplify (RegexAny RegexNull) = RegexEmpty
+simplify (RegexAny (RegexAny a)) = RegexAny (simplify a)
+simplify (RegexAny r) = RegexAny (simplify r)
+simplify (RegexOptional RegexNull) = RegexEmpty
 simplify (RegexOptional (RegexOptional a)) = RegexOptional (simplify a)
-simplify (RegexOptional RegexEpsilon) = RegexEpsilon
-simplify (RegexOptional (RegexStar a)) = RegexStar (simplify a)
-simplify (RegexOptional (RegexPlus r)) = RegexStar (simplify r)
+simplify (RegexOptional RegexEmpty) = RegexEmpty
+simplify (RegexOptional (RegexAny a)) = RegexAny (simplify a)
+simplify (RegexOptional (RegexSome r)) = RegexAny (simplify r)
 simplify (RegexOptional r) = RegexOptional (simplify r)
 simplify (RegexOr a b)
     | a == b = simplify a
@@ -62,17 +62,17 @@ simplify (RegexOr a (RegexConcat b c))
     | a == b = RegexConcat (simplify a) (RegexOptional (simplify c))
 simplify (RegexOr RegexNull a) = simplify a
 simplify (RegexOr a RegexNull) = simplify a
-simplify (RegexOr RegexEpsilon (RegexStar a)) = RegexStar (simplify a)
-simplify (RegexOr a RegexEpsilon) = RegexOptional (simplify a)
-simplify (RegexOr RegexEpsilon a) = RegexOptional (simplify a)
+simplify (RegexOr RegexEmpty (RegexAny a)) = RegexAny (simplify a)
+simplify (RegexOr a RegexEmpty) = RegexOptional (simplify a)
+simplify (RegexOr RegexEmpty a) = RegexOptional (simplify a)
 simplify (RegexOr a b) = RegexOr (simplify a) (simplify b)
-simplify (RegexConcat RegexEpsilon a) = simplify a
-simplify (RegexConcat a RegexEpsilon) = simplify a
+simplify (RegexConcat RegexEmpty a) = simplify a
+simplify (RegexConcat a RegexEmpty) = simplify a
 simplify (RegexConcat RegexNull a) = RegexNull
 simplify (RegexConcat a RegexNull) = RegexNull
-simplify (RegexConcat (RegexConcat a (RegexStar (RegexConcat c d))) b)
+simplify (RegexConcat (RegexConcat a (RegexAny (RegexConcat c d))) b)
     | RegexConcat d c == RegexConcat a b =
-        RegexPlus
+        RegexSome
             (RegexConcat (simplify a) (simplify b))
 simplify (RegexConcat a b) = RegexConcat (simplify a) (simplify b)
 simplify x = x
@@ -95,7 +95,7 @@ dfaToMatrix (DFA ts _ _) =
     [ [ ( \l -> case () of
             _
                 | not $ null l -> RegexString [(\(a, b, c) -> c) (head l)]
-                | x == y -> RegexEpsilon
+                | x == y -> RegexEmpty
                 | otherwise -> RegexNull
         )
         $ filter (\(f, t, c) -> f == x && t == y) ts
@@ -124,7 +124,7 @@ transitiveClosure (DFA ts _ _) k' r
         let a = r !! i !! k
             b = r !! k !! k
             c = r !! k !! j
-         in RegexConcat (RegexConcat a (RegexStar b)) c
+         in RegexConcat (RegexConcat a (RegexAny b)) c
 
     s = maximum (states a)
 
@@ -139,9 +139,9 @@ takeFirstEqual (x : xs)
     | x == head xs = x
     | otherwise = takeFirstEqual xs
 
-regexify :: DFA -> String
+regexify :: DFA -> Regex
 regexify (DFA ts fs c) =
-    stringify . takeFirstEqual . iterate simplify . foldl RegexOr RegexNull $ k
+    takeFirstEqual . iterate simplify . foldl RegexOr RegexNull $ k
   where
     k = map ((\x y -> s !! x !! y) c) fs
     s = transitiveClosure a 0 (dfaToMatrix a)
@@ -187,4 +187,4 @@ main = do
     --             [1, 2]
     --             1
 
-    putStrLn . regexify $ autom
+    putStrLn . stringify . regexify $ autom
