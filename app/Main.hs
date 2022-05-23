@@ -16,7 +16,7 @@ data DFA = DFA
     , dfaFinalStates :: [State]
     , dfaState :: State
     }
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Regex
     = RegexNull
@@ -165,28 +165,26 @@ main = do
     --             [0]
     --             0
 
-    -- let autom =
-    --         DFA
-    --             [ (0, 1, 'a')
-    --             , (1, 1, 'b')
-    --             , (1, 3, 'c')
-    --             , (0, 2, 'c')
-    --             , (2, 3, 'b')
-    --             ]
-    --             [3]
-    --             0
-
     let autom =
             DFA
-                [ (0, 0, 'b')
-                , (0, 1, 'a')
-                , (1, 0, 'a')
-                , (1, 2, 'b')
-                , (2, 2, 'c')
+                [ (0, 1, 'a')
+                , (1, 1, 'b')
+                , (1, 3, 'c')
+                , (0, 2, 'c')
+                , (2, 3, 'b')
                 ]
-                [1, 2]
-                1
+                [3]
+                0
+
+    -- let autom =
+    --         DFA
+    --             [ (0, 0, 'b')
+    --             , (0, 1, 'a')
+    --             , (1, 0, 'a')
+    --             , (1, 2, 'b')
+    --             , (2, 2, 'c')
+    --             ]
+    --             [1, 2]
+    --             1
 
     putStrLn . regexify $ autom
-
-    pure ()
