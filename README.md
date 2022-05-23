@@ -55,6 +55,20 @@ stringify . regexify $ autom
 > "(ab*c|cb)"
 ```
 
+where the Regex type is defined as
+```haskell
+data Regex
+    = RegexNull
+    | RegexEmpty
+    | RegexString String
+    | RegexAny Regex
+    | RegexSome Regex
+    | RegexOptional Regex
+    | RegexOr Regex Regex
+    | RegexConcat Regex Regex
+    deriving (Show, Eq)
+``` 
+
 \
 Regexify works using the [transitive closure method](https://cs.stackexchange.com/a/2395) to convert DFAs to regular expressions.
 To simplify the regular expressions, pattern matching on given rules is used to simplify the expression as far as possible.
